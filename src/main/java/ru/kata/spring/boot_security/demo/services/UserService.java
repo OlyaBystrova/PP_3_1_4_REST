@@ -1,6 +1,7 @@
 package ru.kata.spring.boot_security.demo.services;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.models.User;
 import java.util.List;
 
@@ -11,7 +12,8 @@ public interface UserService {
 
     void save(User user);
 
-    void update(User user);
+    @Transactional
+    void update(int id, User updateUser);
 
     void deleteById(int id);
 

@@ -37,9 +37,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     @Transactional
     public User passwordCoder(User user) {
-        if (!passwordEncoder.matches(passwordEncoder.encode(user.getPassword()), user.getPassword())) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
         return user;
     }
 
@@ -55,7 +53,16 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Override
     @Transactional
-    public void update(User user) {userRepository.update(user);}
+    public void update(int id, User updateUser) {
+        User user = userRepository.getById(id);
+        if (updateUser.getPassword().equals(user.getPassword())) {
+            userRepository.update(updateUser);
+        } else {
+            String pass = passwordEncoder.encode(updateUser.getPassword());
+            updateUser.setPassword(pass);
+            userRepository.update(updateUser);
+        }
+    }
 
     @Override
     @Transactional

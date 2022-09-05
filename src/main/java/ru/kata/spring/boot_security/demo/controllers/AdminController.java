@@ -4,9 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import ru.kata.spring.boot_security.demo.models.Role;
 import ru.kata.spring.boot_security.demo.models.User;
 import ru.kata.spring.boot_security.demo.services.RoleService;
 import ru.kata.spring.boot_security.demo.services.UserService;
+
+import javax.validation.Valid;
 import java.security.Principal;
 
 
@@ -24,6 +27,12 @@ public class AdminController {
 
     @GetMapping()
     public String pageForAdmin(Model model, Principal principal) {
+        StringBuilder roles = new StringBuilder();
+        for (Role role : userService.findUserByEmail(principal.getName()).getRoles()) {
+            roles.append(role.toString());
+            roles.append(" ");
+        }
+        model.addAttribute("thisUserRole", roles);
         model.addAttribute("users", userService.findAll());
         model.addAttribute("this_user", userService.findUserByEmail(principal.getName()));
         model.addAttribute("new_user", new User());
@@ -32,7 +41,7 @@ public class AdminController {
     }
 
     @PostMapping("/new")
-    public String createUser(@ModelAttribute("user") User user,
+    public String createUser(@ModelAttribute("user") @Valid User user,
                                 @RequestParam(value = "nameRoles") String[] roles) {
         user.setRoles(roleService.getSetOfRoles(roles));
         userService.save(user);
@@ -40,16 +49,18 @@ public class AdminController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public String delete(@PathVariable("id") int id) {
+    public String delete(@PathVariable("id") int id, @ModelAttribute User user,
+                         @RequestParam(value = "deleteRole") String[] roles) {
+        user.setRoles(roleService.getSetOfRoles(roles));
         userService.deleteById(id);
         return "redirect:/admin";
     }
 
     @PatchMapping("/edit/{id}")
-    public String update(@PathVariable("id") int id, @ModelAttribute User user,
+    public String update(@PathVariable("id") int id, @ModelAttribute @Valid User user,
                          @RequestParam(value = "editRoles") String[] roles) {
         user.setRoles(roleService.getSetOfRoles(roles));
-        userService.update(user);
+        userService.update(user.getId(), user);
         return "redirect:/admin";
     }
 }
