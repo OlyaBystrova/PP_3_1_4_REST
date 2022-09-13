@@ -17,7 +17,8 @@ public interface UserService {
 
     void deleteById(int id);
 
+    User getById(int id);
+
     List<User> findAll();
 
-    User passwordCoder(User user);
 }

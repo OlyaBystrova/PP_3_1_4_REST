@@ -1,6 +1,7 @@
 package ru.kata.spring.boot_security.demo.models;
 
-import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -35,7 +36,7 @@ public class User implements UserDetails {
     @NotEmpty(message = "Country should not be empty")
     private String country;
 
-    @Column(name = "email")
+    @Column(unique = true, updatable = false, name = "email")
     @NotEmpty(message = "Username should not be empty")
     private String email;
 
@@ -46,13 +47,8 @@ public class User implements UserDetails {
     public User() {
     }
 
-//    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @Cascade({
-            org.hibernate.annotations.CascadeType.SAVE_UPDATE,
-            org.hibernate.annotations.CascadeType.MERGE,
-            org.hibernate.annotations.CascadeType.PERSIST
-    })
     @ManyToMany(fetch = FetchType.LAZY)
+    @Fetch(FetchMode.JOIN)
     @JoinTable (name = "users_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -75,7 +71,6 @@ public class User implements UserDetails {
                         .collect(Collectors.toSet());
         return authorities;
     }
-
 
     @Override
     public String getPassword() {

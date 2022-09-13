@@ -1,6 +1,7 @@
 package ru.kata.spring.boot_security.demo.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -9,6 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.models.User;
 import ru.kata.spring.boot_security.demo.repositories.UserRepository;
+import ru.kata.spring.boot_security.demo.util.UserNotFoundException;
+
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import java.util.*;
 
 @Service
@@ -34,27 +39,33 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return user;
     }
 
-    @Override
-    @Transactional
-    public User passwordCoder(User user) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return user;
-    }
 
     @Override
     public User findUserByEmail(String email) {
         return userRepository.findUserByEmail(email);
     }
 
+
     @Override
     @Transactional
-    public void save(User user) { userRepository.save(passwordCoder(user));
+    public void save(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        try {
+            if (userRepository.findUserByEmail(user.getEmail()) != null) {
+                throw new NonUniqueResultException("Ошибка: логин '" + user.getEmail() + "' уже занят.");
+            }
+        } catch (EmptyResultDataAccessException | NoResultException ignored) {
+        }
+        userRepository.save(user);
     }
+
 
     @Override
     @Transactional
     public void update(int id, User updateUser) {
+
         User user = userRepository.getById(id);
+
         if (updateUser.getPassword().equals(user.getPassword())) {
             userRepository.update(updateUser);
         } else {
@@ -68,6 +79,12 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Transactional
     public void deleteById(int id) {
         userRepository.deleteById(id);
+    }
+
+    @Override
+    public User getById(int id) {
+        Optional<User> foundUser = Optional.ofNullable(userRepository.getById(id));
+        return foundUser.orElseThrow(UserNotFoundException::new);
     }
 
     @Override
